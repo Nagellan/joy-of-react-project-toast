@@ -1,5 +1,6 @@
-import React, { useReducer, useMemo, useEffect, createContext, useContext } from 'react';
+import React, { useReducer, useMemo, useCallback, createContext, useContext } from 'react';
 
+import { useEscapeKey } from '../../hooks/useEscapeKey'
 import ToastShelf from '../ToastShelf';
 
 const ToastContext = createContext();
@@ -18,19 +19,7 @@ function ToastProvider({ children }) {
     }
   }, []);
 
-  useEffect(() => {
-    const onKeyDown = (event) => {
-      if (event.code === 'Escape') {
-        dispatch({ type: 'reset' });
-      }
-    }
-
-    window.addEventListener('keydown', onKeyDown);
-
-    return () => {
-      window.removeEventListener('keydown', onKeyDown);
-    }
-  }, [dispatch])
+  useEscapeKey(useCallback(() => dispatch({ type: 'reset' }), []));
 
   const value = useMemo(() => ({
     add: (payload) => dispatch({ type: 'add', payload }),
