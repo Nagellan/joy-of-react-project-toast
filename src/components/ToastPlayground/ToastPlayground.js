@@ -1,14 +1,45 @@
-import React, { useState } from 'react';
+import React, { useState, useReducer } from 'react';
 
-import Toast, { VARIANTS } from '../Toast';
+import { VARIANTS } from '../Toast';
+import ToastShelf from '../ToastShelf';
 import Button from '../Button';
 
 import styles from './ToastPlayground.module.css';
 
 function ToastPlayground() {
-  const [message, setMessage] = useState('');
-  const [variant, setVariant] = useState(VARIANTS[0]);
-  const [toastVisible, setToastVisible] = useState(false);
+  const [counter, setCounter] = useState(0);
+  const [toasts, dispatch] = useReducer((state, action) => {
+    switch (action.type) {
+      case 'add':
+        return [...state, action.payload];
+      case 'remove':
+        return state.filter((toast) => toast.id !== action.payload.id);
+      default:
+        throw new Error('Unknown action type: ' + action.type);
+    }
+  }, []);
+
+  const onSubmit = (formData) => {
+    const message = formData.get('message');
+    let variant = formData.get('variant');
+
+    if (!VARIANTS.includes(variant)) {
+      variant = VARIANTS[0];
+    }
+
+    const id = counter;
+
+    dispatch({
+      type: 'add',
+      payload: {
+        id,
+        variant,
+        message,
+        onClose: () => dispatch({ type: 'remove', payload: { id } })
+      }
+    })
+    setCounter(prev => prev + 1);
+  }
 
   return (
     <div className={styles.wrapper}>
@@ -17,16 +48,9 @@ function ToastPlayground() {
         <h1>Toast Playground</h1>
       </header>
 
-      {toastVisible && (
-        <Toast
-          variant={variant}
-          onClose={() => setToastVisible(false)}
-        >
-          {message}
-        </Toast>
-      )}
+      <ToastShelf toasts={toasts} />
 
-      <div className={styles.controlsWrapper}>
+      <form action={onSubmit} className={styles.controlsWrapper}>
         <div className={styles.row}>
           <label
             htmlFor="message"
@@ -38,9 +62,9 @@ function ToastPlayground() {
           <div className={styles.inputWrapper}>
             <textarea
               id="message"
+              name="message"
+              required
               className={styles.messageInput}
-              value={message}
-              onChange={(event) => setMessage(event.target.value)}
             />
           </div>
         </div>
@@ -57,13 +81,7 @@ function ToastPlayground() {
                   type="radio"
                   name="variant"
                   value={option}
-                  checked={option === variant}
-                  onChange={(event) => {
-                    if (!VARIANTS.includes(event.target.value)) {
-                      return;
-                    }
-                    setVariant(event.target.value)
-                  }}
+                  required
                 />
                 {option}
               </label>
@@ -76,14 +94,10 @@ function ToastPlayground() {
           <div
             className={`${styles.inputWrapper} ${styles.radioWrapper}`}
           >
-            <Button
-              onClick={() => setToastVisible(true)}
-            >
-              Pop Toast!
-            </Button>
+            <Button type="submit">Pop Toast!</Button>
           </div>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
