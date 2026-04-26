@@ -1,23 +1,15 @@
-import React, { useState, useReducer } from 'react';
+import React, { useState } from 'react';
 
 import { VARIANTS } from '../Toast';
 import ToastShelf from '../ToastShelf';
 import Button from '../Button';
 
 import styles from './ToastPlayground.module.css';
+import { useToasts } from '../ToastProvider/ToastProvider';
 
 function ToastPlayground() {
   const [counter, setCounter] = useState(0);
-  const [toasts, dispatch] = useReducer((state, action) => {
-    switch (action.type) {
-      case 'add':
-        return [...state, action.payload];
-      case 'remove':
-        return state.filter((toast) => toast.id !== action.payload.id);
-      default:
-        throw new Error('Unknown action type: ' + action.type);
-    }
-  }, []);
+  const toasts = useToasts()
 
   const onSubmit = (formData) => {
     const message = formData.get('message');
@@ -29,14 +21,11 @@ function ToastPlayground() {
 
     const id = counter;
 
-    dispatch({
-      type: 'add',
-      payload: {
-        id,
-        variant,
-        message,
-        onClose: () => dispatch({ type: 'remove', payload: { id } })
-      }
+    toasts.add({
+      id,
+      variant,
+      message,
+      onClose: () => toasts.remove(id)
     })
     setCounter(prev => prev + 1);
   }
@@ -47,8 +36,6 @@ function ToastPlayground() {
         <img alt="Cute toast mascot" src="/toast.png" />
         <h1>Toast Playground</h1>
       </header>
-
-      <ToastShelf toasts={toasts} />
 
       <form action={onSubmit} className={styles.controlsWrapper}>
         <div className={styles.row}>
